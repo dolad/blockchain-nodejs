@@ -1,0 +1,51 @@
+const Block=require("./block");
+const cryptoHash=require("./crypto-hash");
+
+class Blockchain{
+constructor(){
+    this.chain=[Block.genesis()];
+    }
+
+    addBlock({data}){
+        const newBlock=Block.minedBlock({ lastblock:this.chain[this.chain.length-1], data });
+        this.chain.push(newBlock);
+    }
+    // validation this is where crypto validation is 
+    
+    static isValidChain(chain){
+            //checking if the first chain is genesis 
+        if(JSON.stringify(chain[0]) !== JSON.stringify(Block.genesis)){
+            return false;
+        }
+        // validating each of the element in the chain by looing and meeting conditions
+
+        for (let i = 1; i < chain.length; i++) {
+            const {timestamp, lastHash, hash, nonce, difficulty, data} = chain[i];
+            const actualLastHash=chain[i-1].hash;
+            const lastDifficulty=chain[i-1].difficulty
+
+            if(lastHash !== actualLastHash) return false;
+            const validatedHash=cryptoHash(timestamp,lastHash,data,nonce,difficulty);
+            if(hash !==validatedHash) return false;
+   
+            if (Math.abs(lastDifficulty-difficulty)>1) return false;
+        }
+            return true;
+    };
+     replaceChain(chain){
+         if (chain.length <= this.chain.length){
+             console.error('the incoming chain must be longer');
+             return;
+         }
+         if(!Blockchain.isValidChain(chain)){
+             console.error('the incoming chain must be valid');
+             return;
+         }
+        console.log('replacing the chain with', chain);
+         this.chain=chain;
+
+    }
+       
+}
+
+module.exports=Blockchain;
